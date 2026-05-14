@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カフェ混雑シミュレーター</title>
+    <meta name="description" content="カフェの来客数、時間、スタッフ人数、注文の重さから、予想待ち時間と混雑度を計算するシミュレーターです。">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Cafe Simulator ☕</h1>
+            <p>混雑状況と予想待ち時間を計算します</p>
+        </header>
+
+        <main>
+            <div class="card form-card">
+                <form id="simulator-form">
+                    <div class="form-group">
+                        <label for="customers">来客数 (人)</label>
+                        <input type="number" id="customers" name="customers" min="1" placeholder="例: 50" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="hours">時間 (時間)</label>
+                        <input type="number" id="hours" name="hours" min="0.5" step="0.5" placeholder="例: 2" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="staff">スタッフ人数 (人)</label>
+                        <input type="number" id="staff" name="staff" min="1" placeholder="例: 3" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="order-type">注文の傾向</label>
+                        <select id="order-type" name="order-type" required>
+                            <option value="1.0">ホットコーヒー/アイスコーヒー中心 (標準)</option>
+                            <option value="1.2">パッションティー/ブラックティー中心 (少し手間)</option>
+                            <option value="2.0">フードや注文数多め (手間がかかる)</option>
+                            <option value="2.5">フラペチーノ多め (かなり時間がかかる)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="calc-btn">計算する</button>
+                </form>
+            </div>
+
+            <div id="result-area" class="card result-card hidden">
+                <h2>シミュレーション結果</h2>
+                
+                <div class="result-grid">
+                    <div class="result-item">
+                        <span class="result-label">予想待ち時間</span>
+                        <div class="wait-time-wrapper">
+                            <span id="wait-time" class="result-value">--</span>
+                            <span class="unit">分</span>
+                        </div>
+                    </div>
+                    
+                    <div class="result-item">
+                        <span class="result-label">混雑度</span>
+                        <span id="congestion-level" class="badge">--</span>
+                    </div>
+                </div>
+
+                <div class="advice-section">
+                    <h3>💡 改善アドバイス</h3>
+                    <p id="advice-text">--</p>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2026 Cafe Congestion Simulator</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
