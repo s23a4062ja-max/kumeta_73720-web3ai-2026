@@ -139,7 +139,7 @@ VPC に沿った初期プロトタイプ(任意):
 
 | 項目 | 回答 |
 |---|---|
-| デプロイURL(Vercel等) | [YouTube集中モード](https://kumeta-73720-web3ai-2026.vercel.app/lectures/lecture3/youtube-focus/) |
+| デプロイURL(Vercel等) | [YouTube集中モード](https://kumeta-73720-web3ai-2026.vercel.app/) |
 | 一言紹介 | YouTubeのダラダラ視聴を防ぐため、見る理由を宣言し制限時間をカウントダウンするアプリ |
 
 > 必須ではありません。\
