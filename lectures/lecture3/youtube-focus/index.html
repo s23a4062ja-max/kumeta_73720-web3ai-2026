@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube集中モード | ダラダラ視聴防止タイマー</title>
+    <!-- Google Fontsの導入: Outfit と 医療や学習アプリに合う Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* デザインシステム・共通変数 */
+        :root {
+            --bg-color: #0f172a;        /* スレートダークな背景 */
+            --card-bg: #1e293b;         /* やや明るいカード背景 */
+            --accent-color: #ef4444;    /* YouTubeを連想させるレッド */
+            --accent-glow: rgba(239, 68, 68, 0.4);
+            --text-primary: #f8fafc;     /* メインテキスト（白） */
+            --text-secondary: #94a3b8;   /* サブテキスト（グレー） */
+            --success-color: #10b981;    /* グリーン */
+            --border-color: #334155;
+            --font-sans: 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif;
+            --font-timer: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            overflow-x: hidden;
+        }
+
+        /* アプリ全体のコンテナ */
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        /* アプリヘッダー */
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-color);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        /* フォームグループ */
+        .form-group {
+            margin-bottom: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            background-color: #0f172a;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* クイック選択時間ボタン */
+        .quick-time-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .preset-btn {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .preset-btn.active {
+            background-color: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* アクションボタン（メイン） */
+        .btn {
+            width: 100%;
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 1.1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1.5px solid var(--border-color);
+            color: var(--text-secondary);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        /* カウントダウン表示画面 (初期非表示) */
+        .timer-screen {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .timer-reason-box {
+            background-color: #0f172a;
+            border-left: 4px solid var(--accent-color);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+
+        .timer-reason-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .timer-reason-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        /* タイマーの数値 */
+        .timer-display {
+            font-family: var(--font-timer);
+            font-size: 5.5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin: 2rem 0;
+            letter-spacing: -2px;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 20px rgba(255, 255, 255, 0.05);
+        }
+
+        /* タイマーコントロール */
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 2rem;
+        }
+
+        /* 終了（Time's up）画面 */
+        .finish-screen {
+            display: none;
+            text-align: center;
+            animation: pulse-alert 2s infinite ease-in-out, fadeIn 0.5s ease-out forwards;
+        }
+
+        .finish-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+            animation: bounce 1s infinite alternate;
+        }
+
+        .finish-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .finish-message {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .reason-review {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px dashed var(--accent-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2.5rem;
+            text-align: center;
+        }
+
+        .reason-review p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .reason-review strong {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        /* フッター */
+        footer {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        footer a {
+            color: var(--text-secondary);
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: var(--text-primary);
+        }
+
+        /* アニメーション定義 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse-alert {
+            0%, 100% { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 25px 5px rgba(239, 68, 68, 0.3); border-color: rgba(239, 68, 68, 0.5); }
+        }
+
+        /* 視覚的エフェクト: タイマー残りわずかの時 */
+        .danger-timer {
+            animation: text-danger 1s infinite alternate;
+        }
+
+        @keyframes text-danger {
+            from { filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.2)); }
+            to { filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8)); color: #ff8a8a; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="appCard">
+        <!-- 1. 入力設定画面 -->
+        <div id="setupScreen">
+            <header>
+                <div class="logo">
+                    <span class="logo-dot"></span>
+                    YouTube Focus
+                </div>
+                <h1>YouTube 集中モード</h1>
+                <p class="subtitle">勉強や課題の前に、あらかじめ視聴ルールを決めよう</p>
+            </header>
+
+            <form id="focusForm" onsubmit="startFocusTimer(event)">
+                <!-- 理由入力 -->
+                <div class="form-group">
+                    <label for="watchReason">今YouTubeを見る理由は何ですか？</label>
+                    <input type="text" id="watchReason" placeholder="例: ○○の解説動画を1本だけ見る, 休憩用に音楽を1曲聴く" required autocomplete="off">
+                </div>
+
+                <!-- 時間設定 -->
+                <div class="form-group">
+                    <label for="watchDuration">視聴時間 (分)</label>
+                    <input type="number" id="watchDuration" min="1" max="180" placeholder="分単位で入力" required>
+                    <!-- クイックプリセット -->
+                    <div class="quick-time-presets">
+                        <button type="button" class="preset-btn" onclick="setPreset(5)">5分</button>
+                        <button type="button" class="preset-btn" onclick="setPreset(10)">10分</button>
+                        <button type="button" class="preset-btn" onclick="setPreset(15)">15分</button>
+                        <button type="button" class="preset-btn" onclick="setPreset(30)">30分</button>
+                    </div>
+                </div>
+
+                <!-- スタートボタン -->
+                <button type="submit" class="btn" style="margin-top: 1rem;">
+                    集中モードを開始する
+                </button>
+            </form>
+        </div>
+
+        <!-- 2. タイマー画面 -->
+        <div id="timerScreen" class="timer-screen">
+            <header>
+                <div class="logo">
+                    <span class="logo-dot" style="animation: bounce 1s infinite alternate;"></span>
+                    Focusing
+                </div>
+                <h1>タイマー作動中</h1>
+            </header>
+
+            <!-- 理由の常時表示（自己抑制効果） -->
+            <div class="timer-reason-box">
+                <div class="timer-reason-label">あなたの約束</div>
+                <div class="timer-reason-text" id="activeReason">---</div>
+            </div>
+
+            <!-- 時間表示 -->
+            <div class="timer-display" id="timeRemaining">00:00</div>
+
+            <!-- 操作ボタン -->
+            <div class="control-buttons">
+                <button id="pauseBtn" class="btn btn-secondary" onclick="togglePause()">
+                    一時停止
+                </button>
+                <button class="btn btn-secondary" onclick="resetTimer()">
+                    あきらめてリセット
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. タイマー終了画面 -->
+        <div id="finishScreen" class="finish-screen">
+            <span class="finish-icon">⚠️</span>
+            <h2 class="finish-title">そろそろ作業に戻ろう</h2>
+            
+            <div class="reason-review">
+                <p>当初の視聴理由</p>
+                <strong id="finishedReason">---</strong>
+            </div>
+
+            <p class="finish-message">
+                約束の時間になりました。<br>
+                YouTubeのタブを閉じて、課題や勉強の作業に戻りましょう！
+            </p>
+
+            <button class="btn" onclick="resetTimer()">
+                作業に戻りました (リセット)
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 YouTube集中モード | 課題効率化ツール
+    </footer>
+
+    <script>
+        // グローバル変数
+        let timerInterval = null;
+        let totalSeconds = 0;
+        let isPaused = false;
+        let audioContext = null;
+        let beepInterval = null;
+
+        // プリセットボタンの設定
+        function setPreset(minutes) {
+            document.getElementById('watchDuration').value = minutes;
+            
+            // アクティブクラスの切り替え
+            const presets = document.querySelectorAll('.preset-btn');
+            presets.forEach(btn => btn.classList.remove('active'));
+            
+            // クリックされたボタンをアクティブに
+            event.target.classList.add('active');
+        }
+
+        // タイマー開始処理
+        function startFocusTimer(e) {
+            e.preventDefault();
+
+            const reason = document.getElementById('watchReason').value.trim();
+            const minutes = parseInt(document.getElementById('watchDuration').value);
+
+            if (!reason || isNaN(minutes) || minutes <= 0) return;
+
+            // 各表示用エレメントにデータを反映
+            document.getElementById('activeReason').textContent = reason;
+            document.getElementById('finishedReason').textContent = reason;
+            
+            totalSeconds = minutes * 60;
+            updateTimerDisplay();
+
+            // 画面切り替え
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('timerScreen').style.display = 'block';
+            document.getElementById('finishScreen').style.display = 'none';
+
+            // 音声用AudioContextの初期設定 (ユーザーインタラクションの直後に生成)
+            initAudio();
+
+            // カウントダウン開始
+            isPaused = false;
+            startInterval();
+        }
+
+        // インターバルの開始
+        function startInterval() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    totalSeconds--;
+                    updateTimerDisplay();
+
+                    if (totalSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        triggerFinish();
+                    }
+                }
+            }, 1000);
+        }
+
+        // タイマー表示の更新
+        function updateTimerDisplay() {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            const displayStr = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            const timerEl = document.getElementById('timeRemaining');
+            timerEl.textContent = displayStr;
+
+            // 残り1分(60秒)未満になったら赤く光る警告エフェクトを追加
+            if (totalSeconds < 60) {
+                timerEl.classList.add('danger-timer');
+            } else {
+                timerEl.classList.remove('danger-timer');
+            }
+        }
+
+        // 一時停止・再開のトグル
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            if (isPaused) {
+                pauseBtn.textContent = '再開';
+                pauseBtn.classList.remove('btn-secondary');
+                pauseBtn.style.backgroundColor = 'var(--success-color)';
+                pauseBtn.style.color = '#fff';
+            } else {
+                pauseBtn.textContent = '一時停止';
+                pauseBtn.classList.add('btn-secondary');
+                pauseBtn.style.backgroundColor = '';
+                pauseBtn.style.color = '';
+            }
+        }
+
+        // リセット・初期化
+        function resetTimer() {
+            clearInterval(timerInterval);
+            stopAlarm();
+            
+            // 状態リセット
+            totalSeconds = 0;
+            isPaused = false;
+            
+            // フォームリセット
+            document.getElementById('focusForm').reset();
+            const presets = document.querySelectorAll('.preset-btn');
+            presets.forEach(btn => btn.classList.remove('active'));
+
+            // 一時停止ボタンのテキスト復元
+            const pauseBtn = document.getElementById('pauseBtn');
+            pauseBtn.textContent = '一時停止';
+            pauseBtn.classList.add('btn-secondary');
+            pauseBtn.style.backgroundColor = '';
+            pauseBtn.style.color = '';
+
+            // タイマー警告色解除
+            document.getElementById('timeRemaining').classList.remove('danger-timer');
+
+            // 画面切り替え
+            document.getElementById('setupScreen').style.display = 'block';
+            document.getElementById('timerScreen').style.display = 'none';
+            document.getElementById('finishScreen').style.display = 'none';
+            
+            // カードの警告アニメーション用クラス削除
+            document.getElementById('appCard').classList.remove('finished-active');
+        }
+
+        // 時間終了時（Time's up）の処理
+        function triggerFinish() {
+            document.getElementById('timerScreen').style.display = 'none';
+            document.getElementById('finishScreen').style.display = 'block';
+            
+            // アラーム音開始
+            playAlarm();
+        }
+
+        // Web Audio API の初期化 (iOS/Safari等のブロック対策のためユーザー操作時に行う)
+        function initAudio() {
+            try {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioContext();
+            } catch (e) {
+                console.error("Web Audio API に対応していません。");
+            }
+        }
+
+        // アラーム音の再生 (シンセサイザーのビープ音)
+        function playAlarm() {
+            if (!audioContext) return;
+            
+            // 1.5秒ごとにピピピと鳴らす
+            beepInterval = setInterval(() => {
+                playBeepSound();
+            }, 1500);
+            
+            // 初回即時再生
+            playBeepSound();
+        }
+
+        // 1回分のビープ音 (ピピッ)
+        function playBeepSound() {
+            if (!audioContext || audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            try {
+                // 音1回目 (ピ)
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(880, audioContext.currentTime); // A5の音
+                gain1.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                osc1.start();
+                osc1.stop(audioContext.currentTime + 0.15);
+
+                // 音2回目 (ピ) 少しずらして鳴らす
+                setTimeout(() => {
+                    const osc2 = audioContext.createOscillator();
+                    const gain2 = audioContext.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880, audioContext.currentTime);
+                    gain2.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                    osc2.connect(gain2);
+                    gain2.connect(audioContext.destination);
+                    osc2.start();
+                    osc2.stop(audioContext.currentTime + 0.15);
+                }, 180);
+
+            } catch (error) {
+                console.error("オーディオ再生エラー:", error);
+            }
+        }
+
+        // アラーム音の停止
+        function stopAlarm() {
+            if (beepInterval) {
+                clearInterval(beepInterval);
+                beepInterval = null;
+            }
+        }
+    </script>
+</body>
+</html>
