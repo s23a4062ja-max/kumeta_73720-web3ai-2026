@@ -9,7 +9,7 @@
 ```
 lectures/
 ├── lecture3/    第3回(2026-05-07)— 自分のやりたいことを深掘って設計する(VPC)
-├── lecture4/    第4回(将来追加)
+├── lecture6/    第6回(2026-06-18)— プロトタイプv2 (YouTube集中モードv2)
 └── lecture[N]/  各回が累積
 ```
 
@@ -43,6 +43,7 @@ lectures/
 |---|---|---|---|
 | 3 | 2026-05-07 | 自分のやりたいことを深掘って設計する(VPC) | [`lectures/lecture3/`](./lectures/lecture3/) |
 | 4 | 2026-05-14 | 技術① AIの全体像 | (準備中) |
+| 6 | 2026-06-18 | プロトタイプv2 (集中ログ機能の追加) | [`lectures/lecture6/`](./lectures/lecture6/) |
 
 ---
 
