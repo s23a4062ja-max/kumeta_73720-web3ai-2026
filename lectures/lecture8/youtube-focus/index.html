@@ -1,0 +1,1909 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube集中モード v4 | 価値検証版</title>
+    <!-- Google Fontsの導入: Outfit と Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* デザインシステム・共通変数 */
+        :root {
+            --bg-color: #0f172a;        /* スレートダークな背景 */
+            --card-bg: #1e293b;         /* やや明るいカード背景 */
+            --accent-color: #ef4444;    /* YouTubeを連想させるレッド */
+            --accent-glow: rgba(239, 68, 68, 0.4);
+            --text-primary: #f8fafc;     /* メインテキスト（白） */
+            --text-secondary: #94a3b8;   /* サブテキスト（グレー） */
+            --success-color: #10b981;    /* グリーン */
+            --border-color: #334155;
+            --font-sans: 'Plus Jakarta Sans', 'Segoe UI', Roboto, sans-serif;
+            --font-timer: 'Outfit', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            overflow-x: hidden;
+        }
+
+        /* アプリ全体のコンテナ */
+        .app-container {
+            width: 100%;
+            max-width: 540px;           /* 540pxに拡張し、表示バランスを維持 */
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        /* アプリヘッダー */
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-color);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent-color);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        /* タブメニュー */
+        .tab-container {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 2rem;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.6rem 0.2rem;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+
+        /* フォームグループ */
+        .form-group {
+            margin-bottom: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            background-color: #0f172a;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        /* クイック選択時間ボタン */
+        .quick-time-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .preset-btn {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+        }
+
+        .preset-btn.active {
+            background-color: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* アクションボタン */
+        .btn {
+            width: 100%;
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            padding: 1.1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--accent-glow);
+            filter: brightness(1.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1.5px solid var(--border-color);
+            color: var(--text-secondary);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        /* カウントダウン表示画面 (初期非表示) */
+        .timer-screen {
+            display: none;
+            text-align: center;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .timer-reason-box {
+            background-color: #0f172a;
+            border-left: 4px solid var(--accent-color);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+
+        .timer-reason-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .timer-reason-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        /* タイマーの数値 */
+        .timer-display {
+            font-family: var(--font-timer);
+            font-size: 5.5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin: 2rem 0;
+            letter-spacing: -2px;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 20px rgba(255, 255, 255, 0.05);
+        }
+
+        /* タイマーコントロール */
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 2rem;
+        }
+
+        /* 終了（Time's up）画面 */
+        .finish-screen {
+            display: none;
+            text-align: center;
+            animation: pulse-alert 2s infinite ease-in-out, fadeIn 0.5s ease-out forwards;
+        }
+
+        .finish-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+            animation: bounce 1s infinite alternate;
+        }
+
+        .finish-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .finish-message {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .reason-review {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px dashed var(--accent-color);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .reason-review p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .reason-review strong {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        /* 振り返りフィードバックエリア */
+        .feedback-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* オシャレなフィードバック選択ボタン */
+        .feedback-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 0.5rem;
+        }
+
+        .option-label {
+            display: block;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .option-label input[type="radio"] {
+            display: none;
+        }
+
+        .opt-btn {
+            padding: 0.6rem 0.2rem;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            background-color: #0f172a;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .opt-btn:hover {
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
+        }
+
+        .option-label input[type="radio"]:checked + .opt-btn {
+            border-color: #38bdf8;
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--text-primary);
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+        }
+
+        .option-label input[type="radio"][value="want"]:checked + .opt-btn {
+            border-color: var(--success-color);
+            background-color: rgba(16, 185, 129, 0.1);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+        }
+
+        .option-label input[type="radio"][value="not_really"]:checked + .opt-btn {
+            border-color: var(--accent-color);
+            background-color: rgba(239, 68, 68, 0.1);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+        }
+
+        /* 統計 & ログスタイル */
+        .logs-section {
+            margin-top: 2rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.75rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem;
+            text-align: center;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .stat-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-top: 4px;
+            font-family: var(--font-timer);
+        }
+
+        .log-item {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .log-item:hover {
+            border-color: #475569;
+            background-color: #131d35;
+        }
+
+        .log-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+            flex-grow: 1;
+            padding-right: 12px;
+        }
+
+        .log-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .log-date {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-family: var(--font-timer);
+        }
+
+        .log-duration {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-family: var(--font-timer);
+        }
+
+        .log-reason {
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .log-ai-advice {
+            font-size: 0.72rem;
+            color: #38bdf8;
+            margin-top: 4px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.05);
+            padding-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .log-action {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .delete-single-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+
+        .delete-single-btn:hover {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--accent-color);
+        }
+
+        #logsList, #feedbackList {
+            max-height: 240px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        /* スクロールバーのカスタマイズ */
+        #logsList::-webkit-scrollbar, #feedbackList::-webkit-scrollbar {
+            width: 6px;
+        }
+        #logsList::-webkit-scrollbar-track, #feedbackList::-webkit-scrollbar-track {
+            background: #0f172a;
+            border-radius: 4px;
+        }
+        #logsList::-webkit-scrollbar-thumb, #feedbackList::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        #logsList::-webkit-scrollbar-thumb:hover, #feedbackList::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* 発表用まとめスライドセクションのスタイル */
+        .presentation-container {
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .pres-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .pres-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #38bdf8;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1.5px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .pres-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pres-list li {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .pres-list li::before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-weight: 900;
+        }
+
+        /* フッター */
+        footer {
+            margin-top: 2.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        footer a {
+            color: var(--text-secondary);
+            text-decoration: underline;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: var(--text-primary);
+        }
+
+        /* アニメーション定義 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse-alert {
+            0%, 100% { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 0 0 rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 25px 5px rgba(239, 68, 68, 0.3); border-color: rgba(239, 68, 68, 0.5); }
+        }
+
+        .danger-timer {
+            animation: text-danger 1s infinite alternate;
+        }
+
+        @keyframes text-danger {
+            from { filter: drop-shadow(0 0 2px rgba(239, 68, 68, 0.2)); }
+            to { filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8)); color: #ff8a8a; }
+        }
+
+        /* 感想吹き出し表示 */
+        .comment-bubble {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 8px;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }
+        
+        .comment-bubble-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .rating-badge {
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+        }
+
+        .rating-want {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+        }
+
+        .rating-somewhat {
+            background-color: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+        }
+
+        .rating-not_really {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container" id="appCard">
+        
+        <!-- 上部ナビゲーションタブ (タイマー稼働中以外に表示) -->
+        <div class="tab-container" id="navigationTabs">
+            <button class="tab-btn active" id="tabAppBtn" onclick="switchTab('app')">
+                📱 アプリ本体
+            </button>
+            <button class="tab-btn" id="tabPresBtn" onclick="switchTab('presentation')">
+                📊 最終発表まとめ
+            </button>
+            <button class="tab-btn" id="tabValBtn" onclick="switchTab('validation')">
+                🔍 価値検証まとめ
+            </button>
+        </div>
+
+        <!-- ========================================================
+             A. アプリ画面
+             ======================================================== -->
+        <div id="appView">
+            
+            <!-- 1. 入力設定画面 -->
+            <div id="setupScreen">
+                <header>
+                     <div class="logo">
+                        <span class="logo-dot"></span>
+                        YouTube Focus v4
+                    </div>
+                    <h1>YouTube 集中モード</h1>
+                    <p class="subtitle">勉強や課題の前に、あらかじめ視聴ルールを決めよう</p>
+                </header>
+
+                <!-- 🤖 AIふりかえりフィードバックエリア (直近タイマー終了後に表示) -->
+                <div id="aiFeedbackBox" style="display: none; background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%); border: 1.5px solid var(--border-color); border-radius: 16px; padding: 1.25rem; margin-bottom: 2rem; animation: fadeIn 0.4s ease-out forwards;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.25rem;">🤖</span>
+                            <h3 style="font-size: 0.9rem; font-weight: 800; color: #38bdf8;">AIアドバイザーの振り返り</h3>
+                        </div>
+                        <button onclick="closeAiFeedback()" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; font-size: 1rem; line-height: 1;">×</button>
+                    </div>
+                    <p id="aiFeedbackText" style="font-size: 0.82rem; line-height: 1.6; color: var(--text-primary);">---</p>
+                </div>
+
+                <form id="focusForm" onsubmit="startFocusTimer(event)">
+                    <!-- 理由入力 -->
+                    <div class="form-group">
+                        <label for="watchReason">今YouTubeを見る理由は何ですか？</label>
+                        <input type="text" id="watchReason" placeholder="例: ○○の解説動画を1本だけ見る, 休憩用に音楽を1曲聴く" required autocomplete="off">
+                    </div>
+
+                    <!-- 時間設定 -->
+                    <div class="form-group">
+                        <label for="watchDuration">視聴時間 (分)</label>
+                        <input type="number" id="watchDuration" min="0.1" max="180" step="0.1" placeholder="分単位で入力 (0.1分＝6秒)" required>
+                        <!-- クイックプリセット -->
+                        <div class="quick-time-presets">
+                            <button type="button" class="preset-btn" onclick="setPreset(5)">5分</button>
+                            <button type="button" class="preset-btn" onclick="setPreset(10)">10分</button>
+                            <button type="button" class="preset-btn" onclick="setPreset(15)">15分</button>
+                            <button type="button" class="preset-btn" onclick="setPreset(30)">30分</button>
+                        </div>
+                    </div>
+
+                    <!-- スタートボタン -->
+                    <button type="submit" class="btn" style="margin-top: 1rem;">
+                        集中モードを開始する
+                    </button>
+                </form>
+
+                <!-- 📊 統計と 🕒 履歴ログセクション -->
+                <div class="logs-section">
+                    
+                    <!-- 統計パネル -->
+                    <div class="stats-container" style="margin-bottom: 2rem;">
+                        <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px;">
+                            📊 本日の統計
+                        </h3>
+
+                        <!-- 診断された集中タイプカード -->
+                        <div id="focusTypeCard" style="background-color: #0f172a; border: 1px solid var(--border-color); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);">
+                            <div>
+                                <div style="font-size: 0.65rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">本日の集中タイプ</div>
+                                <div id="focusTypeVal" style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin-top: 2px;">未計測</div>
+                            </div>
+                            <div id="focusTypeDesc" style="font-size: 0.72rem; color: var(--text-secondary); text-align: right; max-width: 60%; line-height: 1.35;">
+                                タイマーを終了して今日のタイプを診断しよう！
+                            </div>
+                        </div>
+
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">利用回数</div>
+                                <div id="statTotal" class="stat-val">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">戻れた回数</div>
+                                <div id="statSuccess" class="stat-val" style="color: var(--success-color);">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">成功率</div>
+                                <div id="statRate" class="stat-val" style="color: #38bdf8;">0%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 履歴ログ一覧 -->
+                    <div class="history-container" style="margin-bottom: 2.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                🕒 直近の利用ログ
+                            </h3>
+                            <button id="clearLogsBtn" onclick="clearAllLogs()" style="background: transparent; border: none; color: var(--text-secondary); font-size: 0.75rem; cursor: pointer; text-decoration: underline; transition: color 0.2s;">
+                                ログをクリア
+                            </button>
+                        </div>
+                        <div id="logsList">
+                            <!-- JavaScriptで動的に生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 📣 継続意向フィードバック入力（常時表示用） -->
+                    <div class="feedback-input-container" style="border-top: 1px solid var(--border-color); padding-top: 1.75rem; margin-bottom: 2rem;">
+                        <h3 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px;">
+                            📣 継続利用のフィードバック
+                        </h3>
+                        
+                        <!-- 簡易フィードバック統計 -->
+                        <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1rem; gap: 8px;">
+                            <div class="stat-card" style="padding: 0.5rem;">
+                                <div class="stat-label" style="font-size: 0.6rem;">フィードバック数</div>
+                                <div id="fbTotalStat" class="stat-val" style="font-size: 1.05rem;">0</div>
+                            </div>
+                            <div class="stat-card" style="padding: 0.5rem;">
+                                <div class="stat-label" style="font-size: 0.6rem;">使いたい人数</div>
+                                <div id="fbWantStat" class="stat-val" style="font-size: 1.05rem; color: var(--success-color);">0</div>
+                            </div>
+                            <div class="stat-card" style="padding: 0.5rem;">
+                                <div class="stat-label" style="font-size: 0.6rem;">継続意向率※</div>
+                                <div id="fbRateStat" class="stat-val" style="font-size: 1.05rem; color: #38bdf8;">0%</div>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.65rem; color: var(--text-secondary); margin-top: -0.5rem; margin-bottom: 1rem; text-align: right;">※継続意向率：「使いたい」＋「少し使いたい」の割合</p>
+
+                        <div class="pres-card" style="background: rgba(255, 255, 255, 0.01); padding: 1.25rem; margin-bottom: 1.5rem; border-color: var(--border-color);">
+                            <form id="feedbackForm" onsubmit="submitFeedback(event, 'main')">
+                                <div class="form-group" style="margin-bottom: 1.25rem;">
+                                    <label style="font-size: 0.8rem;">このアプリを継続して使いたいですか？</label>
+                                    <div class="feedback-options">
+                                        <label class="option-label">
+                                            <input type="radio" name="rating" value="want" required>
+                                            <div class="opt-btn">
+                                                <span style="font-size: 1.2rem;">😍</span>
+                                                <span>使いたい</span>
+                                            </div>
+                                        </label>
+                                        <label class="option-label">
+                                            <input type="radio" name="rating" value="somewhat">
+                                            <div class="opt-btn">
+                                                <span style="font-size: 1.2rem;">🙂</span>
+                                                <span>少し使いたい</span>
+                                            </div>
+                                        </label>
+                                        <label class="option-label">
+                                            <input type="radio" name="rating" value="not_really">
+                                            <div class="opt-btn">
+                                                <span style="font-size: 1.2rem;">😟</span>
+                                                <span>使わないかも</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 1rem;">
+                                    <label for="feedbackComment" style="font-size: 0.8rem;">感想・改善してほしい点（自由入力）</label>
+                                    <textarea id="feedbackComment" placeholder="例: タイマー終了後のアラームで強制的に目が覚める。AIのアドバイスが面白いので続けられそう。" style="width: 100%; min-height: 70px; background-color: #0f172a; border: 1.5px solid var(--border-color); border-radius: 12px; padding: 0.75rem; color: var(--text-primary); font-family: var(--font-sans); font-size: 0.85rem; resize: vertical; transition: all 0.3s;"></textarea>
+                                </div>
+                                <button type="submit" class="btn" style="padding: 0.75rem; font-size: 0.85rem;">フィードバックを送信する</button>
+                            </form>
+                        </div>
+
+                        <!-- 履歴フィードバック一覧 -->
+                        <div class="history-container">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                                <h3 style="font-size: 0.9rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                    💬 直近の感想・フィードバック
+                                </h3>
+                                <button onclick="clearAllFeedbacks()" style="background: transparent; border: none; color: var(--text-secondary); font-size: 0.75rem; cursor: pointer; text-decoration: underline; transition: color 0.2s;">
+                                    全リセット
+                                </button>
+                            </div>
+                            <div id="feedbackList">
+                                <!-- JavaScriptで動的に生成 -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. タイマー画面 -->
+            <div id="timerScreen" class="timer-screen">
+                <header>
+                    <div class="logo">
+                        <span class="logo-dot" style="animation: bounce 1s infinite alternate;"></span>
+                        Focusing
+                    </div>
+                    <h1>タイマー作動中</h1>
+                </header>
+
+                <!-- 理由の常時表示（自己抑制効果） -->
+                <div class="timer-reason-box">
+                    <div class="timer-reason-label">あなたの約束</div>
+                    <div class="timer-reason-text" id="activeReason">---</div>
+                </div>
+
+                <!-- 時間表示 -->
+                <div class="timer-display" id="timeRemaining">00:00</div>
+
+                <!-- 操作ボタン -->
+                <div class="control-buttons">
+                    <button id="pauseBtn" class="btn btn-secondary" onclick="togglePause()">
+                        一時停止
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetTimer()">
+                        あきらめてリセット
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. タイマー終了画面 -->
+            <div id="finishScreen" class="finish-screen">
+                <span class="finish-icon">⚠️</span>
+                <h2 class="finish-title">そろそろ作業に戻ろう</h2>
+                
+                <div class="reason-review">
+                    <p>当初の視聴理由</p>
+                    <strong id="finishedReason">---</strong>
+                </div>
+
+                <p class="finish-message">
+                    約束の時間になりました。<br>
+                    YouTubeのタブを閉じて、本来の作業に戻りましょう！
+                </p>
+
+                <!-- ステップ1：作業に戻れたか？ -->
+                <div class="feedback-box" id="step1FeedbackBox">
+                    <p style="font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary);">
+                        すぐに作業に戻れましたか？
+                    </p>
+                    <div class="feedback-buttons">
+                        <button class="btn" onclick="logFocusResultAndNext(true)" style="background-color: var(--success-color); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                            👍 戻れた！ (成功)
+                        </button>
+                        <button class="btn" onclick="logFocusResultAndNext(false)" style="background-color: var(--accent-color); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+                            👎 戻れなかった (失敗)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ステップ2：継続利用意向フィードバックフォーム (ステップ1終了後に切り替え) -->
+                <div class="feedback-box" id="step2FeedbackBox" style="display: none;">
+                    <p style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-primary);">
+                        このアプリを継続して使いたいですか？
+                    </p>
+                    <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        よろしければ価値検証へのご協力をお願いします
+                    </p>
+                    <form id="timerFeedbackForm" onsubmit="submitFeedback(event, 'timer')">
+                        <div class="feedback-options" style="margin-bottom: 1.25rem;">
+                            <label class="option-label">
+                                <input type="radio" name="ratingTimer" value="want" required>
+                                <div class="opt-btn">
+                                    <span style="font-size: 1.2rem;">😍</span>
+                                    <span>使いたい</span>
+                                </div>
+                            </label>
+                            <label class="option-label">
+                                <input type="radio" name="ratingTimer" value="somewhat">
+                                <div class="opt-btn">
+                                    <span style="font-size: 1.2rem;">🙂</span>
+                                    <span>少し使いたい</span>
+                                </div>
+                            </label>
+                            <label class="option-label">
+                                <input type="radio" name="ratingTimer" value="not_really">
+                                <div class="opt-btn">
+                                    <span style="font-size: 1.2rem;">😟</span>
+                                    <span>使わないかも</span>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-group" style="text-align: left; margin-bottom: 1.25rem;">
+                            <label for="timerFeedbackComment" style="font-size: 0.8rem; color: var(--text-secondary);">感想・改善案（自由入力）</label>
+                            <textarea id="timerFeedbackComment" placeholder="例: タイマー終了画面からすぐにフィードバックができるのが良い。" style="width: 100%; min-height: 60px; background-color: #0f172a; border: 1.5px solid var(--border-color); border-radius: 12px; padding: 0.5rem 0.75rem; color: var(--text-primary); font-family: var(--font-sans); font-size: 0.8rem; resize: vertical; margin-top: 0.25rem;"></textarea>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="btn btn-secondary" onclick="resetTimer()" style="flex: 1; padding: 0.75rem; font-size: 0.85rem;">スキップ</button>
+                            <button type="submit" class="btn" style="flex: 2; padding: 0.75rem; font-size: 0.85rem; margin-top: 0;">送信して戻る</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================
+             B. 最終発表まとめスライド画面
+             ======================================================== -->
+        <div id="presentationView" class="presentation-container">
+            <header>
+                <div class="logo">
+                    <span class="logo-dot" style="background-color: #38bdf8; box-shadow: 0 0 8px #38bdf8;"></span>
+                    Presentation
+                </div>
+                <h1>最終発表まとめ</h1>
+                <p class="subtitle">YouTube集中モードの設計・進化・未来</p>
+            </header>
+
+            <!-- 1. 解決したいバグとターゲット -->
+            <div class="pres-card">
+                <h3 class="pres-title">🚨 解決したい社会（学生）バグ</h3>
+                <ul class="pres-list">
+                    <li><strong>バグの内容:</strong> 「勉強や課題をやるつもりだったのに、解説動画を1本見るつもりが、いつの間にかおすすめ動画をループして数時間を浪費するバグ」</li>
+                    <li><strong>対象ユーザー:</strong> 課題締切やテスト勉強を控えており、自律的に勉強したいのにスマホやPCのYouTubeの誘惑に勝てない学生</li>
+                </ul>
+            </div>
+
+            <!-- 2. バージョンごとの進化 -->
+            <div class="pres-card">
+                <h3 class="pres-title">📈 プロトタイプのステップアップ</h3>
+                <ul class="pres-list">
+                    <li><strong>v1 (基本タイマー):</strong> 「視聴理由」の宣言とカウントダウンによる警告音。見る目的を意識化させる基礎設計。</li>
+                    <li><strong>v2 (ログ保存):</strong> 終了後の「作業に戻れたか？」の振り返り記録。`localStorage` と連携し、今日の成功率や履歴ログを可視化。</li>
+                    <li><strong>v3 (AI分析とプレゼン化):</strong> 理由・結果・成功率から最適化された「AI風ふりかえりコメント」の生成、集中状態の「タイプ診断」、および発表資料の統合。</li>
+                    <li><strong>v4 (価値検証版 - 本Ver):</strong> アプリを第三者に触ってもらい継続利用意向を測る「フィードバック機能」と「価値検証まとめセクション」を導入。</li>
+                </ul>
+            </div>
+
+            <!-- 3. 今後追加したい機能のロードマップ -->
+            <div class="pres-card">
+                <h3 class="pres-title">🔮 今後追加したい未来ロードマップ</h3>
+                <ul class="pres-list">
+                    <li><strong>本物のLLM (Gemini API 等) 連携:</strong> ユーザーとAIが「YouTubeを見すぎた言い訳」について対話し、より柔軟でパーソナライズされた行動変容を促す。</li>
+                    <li><strong>ブラウザ拡張機能 (Extension) 連携:</strong> 時間終了時に実際にYouTubeのタブを強制クローズする、物理ブロック機能の実装。</li>
+                    <li><strong>友達とのピアプレッシャー共有:</strong> Discordなどのコミュニティに今日の成功率を自動投稿し、友達同士で集中力を監視・高め合う仕組み。</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ========================================================
+             C. 価値検証まとめスライド画面
+             ======================================================== -->
+        <div id="validationView" class="presentation-container">
+            <header>
+                <div class="logo">
+                    <span class="logo-dot" style="background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color);"></span>
+                    Validation
+                </div>
+                <h1>価値検証まとめ</h1>
+                <p class="subtitle">実際のユーザーフィードバックに基づく評価</p>
+            </header>
+
+            <!-- 1. 想定ユーザー -->
+            <div class="pres-card">
+                <h3 class="pres-title">👤 想定ユーザー (Target)</h3>
+                <ul class="pres-list">
+                    <li>勉強や課題に取り組む予定がある学生</li>
+                    <li>YouTubeを勉強の参考（または息抜き）に見始めるが、誘惑に負けてダラダラ見続けてしまう人</li>
+                </ul>
+            </div>
+
+            <!-- 2. 検証したい問い -->
+            <div class="pres-card">
+                <h3 class="pres-title">❓ 検証したい問い (Hypothesis)</h3>
+                <ul class="pres-list">
+                    <li>「見る理由と時間」を事前宣言させ、事後に「戻れたか」を自己申告させること、およびAIによる寄り添いフィードバックを提供することで、自律的な誘惑の制御が促され、<strong>『このアプリを継続して使いたい』</strong> とユーザーは思うか？</li>
+                </ul>
+            </div>
+
+            <!-- 3. 得られた感想 (動的に反映) -->
+            <div class="pres-card">
+                <h3 class="pres-title">💬 得られた感想・フィードバック (Feedback)</h3>
+                <div id="valFeedbackComments" style="max-height: 250px; overflow-y: auto; padding-right: 4px;">
+                    <!-- 動的に感想が表示される -->
+                </div>
+            </div>
+
+            <!-- 4. 次に改善したいこと -->
+            <div class="pres-card">
+                <h3 class="pres-title">🚀 次に改善したいこと (Next Action)</h3>
+                <ul class="pres-list">
+                    <li><strong>ブラウザ拡張機能との連携:</strong> 時間終了時に自動的にYouTubeタブを物理的に閉じる機能。</li>
+                    <li><strong>AI対話アドバイザーの本格実装:</strong> 言い訳をするユーザーに対し、Gemini等を用いてコーチング風に優しく対話する機能。</li>
+                    <li><strong>フレンド機能:</strong> 同時進行で集中している友人を可視化し、離脱時に通知が行くピアプレッシャーの仕組み。</li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        &copy; 2026 YouTube集中モード v4 | 価値検証版
+    </footer>
+
+    <script>
+        // グローバル変数
+        let timerInterval = null;
+        let totalSeconds = 0;
+        let isPaused = false;
+        let audioContext = null;
+        let beepInterval = null;
+
+        // デモ用初期フィードバックデータ
+        const defaultFeedbacks = [
+            {
+                id: "default_1",
+                timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+                rating: "want",
+                comment: "YouTubeを見る理由を宣言することで、本当に今見るべきか立ち止まることができました！継続したいです。"
+            },
+            {
+                id: "default_2",
+                timestamp: new Date(Date.now() - 86400000).toISOString(),
+                rating: "somewhat",
+                comment: "タイマー終了時のアラームがしつこくて強制力があります（笑）。友達と一緒に使いたいです。"
+            },
+            {
+                id: "default_3",
+                timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
+                rating: "want",
+                comment: "AI風のアドバイスが的確で、失敗した時も次頑張ろうと思えました！スマホ版アプリも欲しい。"
+            }
+        ];
+
+        // タブ切り替え
+        function switchTab(tabName) {
+            const appView = document.getElementById('appView');
+            const presentationView = document.getElementById('presentationView');
+            const validationView = document.getElementById('validationView');
+            const tabAppBtn = document.getElementById('tabAppBtn');
+            const tabPresBtn = document.getElementById('tabPresBtn');
+            const tabValBtn = document.getElementById('tabValBtn');
+            
+            // 全非表示
+            appView.style.display = 'none';
+            presentationView.style.display = 'none';
+            validationView.style.display = 'none';
+            tabAppBtn.classList.remove('active');
+            tabPresBtn.classList.remove('active');
+            tabValBtn.classList.remove('active');
+
+            if (tabName === 'app') {
+                appView.style.display = 'block';
+                tabAppBtn.classList.add('active');
+            } else if (tabName === 'presentation') {
+                presentationView.style.display = 'block';
+                tabPresBtn.classList.add('active');
+            } else if (tabName === 'validation') {
+                validationView.style.display = 'block';
+                tabValBtn.classList.add('active');
+                renderValidationView(); // 動的感想表示の更新
+            }
+        }
+
+        // プリセットボタンの設定
+        function setPreset(minutes) {
+            document.getElementById('watchDuration').value = minutes;
+            
+            // アクティブクラスの切り替え
+            const presets = document.querySelectorAll('.preset-btn');
+            presets.forEach(btn => btn.classList.remove('active'));
+            
+            // クリックされたボタンをアクティブに
+            if (window.event) {
+                window.event.target.classList.add('active');
+            }
+        }
+
+        // タイマー開始処理
+        function startFocusTimer(e) {
+            e.preventDefault();
+
+            const reason = document.getElementById('watchReason').value.trim();
+            const minutes = parseFloat(document.getElementById('watchDuration').value);
+
+            if (!reason || isNaN(minutes) || minutes <= 0) return;
+
+            // 表示エレメントに反映
+            document.getElementById('activeReason').textContent = reason;
+            document.getElementById('finishedReason').textContent = reason;
+            
+            totalSeconds = Math.round(minutes * 60);
+            updateTimerDisplay();
+
+            // 画面切り替え
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('timerScreen').style.display = 'block';
+            document.getElementById('finishScreen').style.display = 'none';
+
+            // タイマー稼働中はナビゲーションタブを非表示にして集中させる
+            document.getElementById('navigationTabs').style.display = 'none';
+
+            // 音声用AudioContextの初期設定
+            initAudio();
+
+            // カウントダウン開始
+            isPaused = false;
+            startInterval();
+        }
+
+        // インターバルの開始
+        function startInterval() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (!isPaused) {
+                    totalSeconds--;
+                    updateTimerDisplay();
+
+                    if (totalSeconds <= 0) {
+                        clearInterval(timerInterval);
+                        triggerFinish();
+                    }
+                }
+            }, 1000);
+        }
+
+        // タイマー表示の更新
+        function updateTimerDisplay() {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            const displayStr = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            const timerEl = document.getElementById('timeRemaining');
+            timerEl.textContent = displayStr;
+
+            // 残り1分(60秒)未満になったら赤く光る警告エフェクトを追加
+            if (totalSeconds < 60) {
+                timerEl.classList.add('danger-timer');
+            } else {
+                timerEl.classList.remove('danger-timer');
+            }
+        }
+
+        // 一時停止・再開のトグル
+        function togglePause() {
+            isPaused = !isPaused;
+            const pauseBtn = document.getElementById('pauseBtn');
+            if (isPaused) {
+                pauseBtn.textContent = '再開';
+                pauseBtn.classList.remove('btn-secondary');
+                pauseBtn.style.backgroundColor = 'var(--success-color)';
+                pauseBtn.style.color = '#fff';
+            } else {
+                pauseBtn.textContent = '一時停止';
+                pauseBtn.classList.add('btn-secondary');
+                pauseBtn.style.backgroundColor = '';
+                pauseBtn.style.color = '';
+            }
+        }
+
+        // 一時非表示用
+        function closeAiFeedback() {
+            document.getElementById('aiFeedbackBox').style.display = 'none';
+        }
+
+        // リセット・初期化
+        function resetTimer() {
+            clearInterval(timerInterval);
+            stopAlarm();
+            
+            // 状態リセット
+            totalSeconds = 0;
+            isPaused = false;
+            
+            // フォームリセット
+            document.getElementById('focusForm').reset();
+            const presets = document.querySelectorAll('.preset-btn');
+            presets.forEach(btn => btn.classList.remove('active'));
+
+            // 一時停止ボタンのテキスト復元
+            const pauseBtn = document.getElementById('pauseBtn');
+            pauseBtn.textContent = '一時停止';
+            pauseBtn.classList.add('btn-secondary');
+            pauseBtn.style.backgroundColor = '';
+            pauseBtn.style.color = '';
+
+            // タイマー警告色解除
+            document.getElementById('timeRemaining').classList.remove('danger-timer');
+
+            // ナビゲーションタブの再表示
+            document.getElementById('navigationTabs').style.display = 'flex';
+
+            // 振り返りステップリセット
+            document.getElementById('step1FeedbackBox').style.display = 'block';
+            document.getElementById('step2FeedbackBox').style.display = 'none';
+            document.getElementById('timerFeedbackForm').reset();
+
+            // 画面切り替え
+            document.getElementById('setupScreen').style.display = 'block';
+            document.getElementById('timerScreen').style.display = 'none';
+            document.getElementById('finishScreen').style.display = 'none';
+        }
+
+        // 時間終了時（Time's up）の処理
+        function triggerFinish() {
+            document.getElementById('timerScreen').style.display = 'none';
+            document.getElementById('finishScreen').style.display = 'block';
+            
+            // アラーム音開始
+            playAlarm();
+        }
+
+        // Web Audio API の初期化
+        function initAudio() {
+            try {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioContext();
+            } catch (e) {
+                console.error("Web Audio API に対応していません。");
+            }
+        }
+
+        // アラーム音の再生
+        function playAlarm() {
+            if (!audioContext) return;
+            
+            beepInterval = setInterval(() => {
+                playBeepSound();
+            }, 1500);
+            
+            playBeepSound();
+        }
+
+        // ビープ音
+        function playBeepSound() {
+            if (!audioContext || audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            try {
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(880, audioContext.currentTime);
+                gain1.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                osc1.start();
+                osc1.stop(audioContext.currentTime + 0.15);
+
+                setTimeout(() => {
+                    const osc2 = audioContext.createOscillator();
+                    const gain2 = audioContext.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(880, audioContext.currentTime);
+                    gain2.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                    osc2.connect(gain2);
+                    gain2.connect(audioContext.destination);
+                    osc2.start();
+                    osc2.stop(audioContext.currentTime + 0.15);
+                }, 180);
+
+            } catch (error) {
+                console.error("オーディオ再生エラー:", error);
+            }
+        }
+
+        // アラーム音の停止
+        function stopAlarm() {
+            if (beepInterval) {
+                clearInterval(beepInterval);
+                beepInterval = null;
+            }
+        }
+
+        /* ==========================================================
+           v3 AIふりかえり・診断・ログロジック
+           ========================================================== */
+
+        // AI風コメントの生成ロジック (ルールベースでパラメータによる動的変更)
+        function generateAIComment(reason, duration, success, todayRate) {
+            const lowerReason = reason.toLowerCase();
+            const isStudy = /勉強|学習|解説|講座|授業|テスト|本|読書|英単語|プログラミング|コード|実装|課題|宿題|レポート/i.test(lowerReason);
+            const isEntertainment = /アニメ|ゲーム|実況|バラエティ|映画|ドラマ|音楽|bgm|曲|歌|歌枠|vtuber|雑談|ダラダラ|暇つぶし/i.test(lowerReason);
+
+            let text = "";
+
+            if (success) {
+                if (isStudy) {
+                    text = `素晴らしい！学習用の動画をサッと視聴してすぐに勉強に戻れましたね。その自己管理能力は本物です。今日の調子なら、この後の課題もサクサク進むはず！`;
+                } else if (isEntertainment) {
+                    text = `見事なセルフコントロールです！お気に入りのエンタメ動画でしっかりリフレッシュし、時間通りに作業に戻れました。メリハリのある素晴らしい時間の使い方です。`;
+                } else {
+                    text = `約束を守って無事作業に戻れましたね！その調子です。少しの休憩が脳を活性化させます。この高い集中力を維持して、作業に取り組みましょう！`;
+                }
+
+                if (todayRate >= 80) {
+                    text += ` 今日は成功率 ${todayRate}% と絶好調！「超集中状態」をしっかり維持できています。`;
+                }
+            } else {
+                if (isStudy) {
+                    text = `勉強のための視聴でしたが、少し長引いてしまったようですね。動画に関連する他の動画に誘惑されていませんか？次回は「1動画だけ」と決めて画面を全画面にするなど、関連動画を遮断するのがおすすめです。`;
+                } else if (isEntertainment) {
+                    text = `エンタメ動画の魅力に引きずられてしまいましたね。YouTubeのアルゴリズムは強力です！次は「視聴時間を5分短くする」か、タイマーを「0.1分（6秒）」にして自制心のトレーニングから始めてみましょう。`;
+                } else {
+                    text = `ついついダラダラ見続けてしまったのですね。自分を責める必要はありません！YouTubeは引き止めるプロです。次はブラウザの別タブでタイマーを開くのではなく、YouTubeを見るタブの隣に並べておきましょう。`;
+                }
+
+                if (todayRate < 50 && todayRate > 0) {
+                    text += ` 今日の成功率が ${todayRate}% と少し下がり気味です。脳が疲れているサインかもしれないので、思い切って15分ほど目を休めるなど、デジタルデトックスの休憩を取りましょう。`;
+                }
+            }
+            return text;
+        }
+
+        // 各ログ項目に埋め込む簡易AIアドバイス
+        function getShortAIAdvice(reason, success) {
+            const lowerReason = reason.toLowerCase();
+            const isStudy = /勉強|学習|解説|講座|授業|テスト|本|読書|英単語|プログラミング|コード|実装|課題|宿題|レポート/i.test(lowerReason);
+
+            if (success) {
+                return isStudy ? "🎯 学習用のスマートな視聴！素晴らしいです。" : "👌 メリハリのあるリフレッシュ大成功！";
+            } else {
+                return isStudy ? "⚠️ 勉強動画でも関連動画の誘惑に注意！" : "🛑 おすすめ動画が出たらすぐにタブを閉じよう！";
+            }
+        }
+
+        // 本日の集中状態からタイプを診断する
+        function diagnoseFocusType(todayLogs) {
+            if (todayLogs.length === 0) {
+                return {
+                    type: "未計測",
+                    desc: "タイマーを完了して、今日の集中状態を計測しよう！",
+                    color: "var(--text-secondary)"
+                };
+            }
+
+            const total = todayLogs.length;
+            const successCount = todayLogs.filter(log => log.success).length;
+            const rate = Math.round((successCount / total) * 100);
+
+            if (total >= 3 && rate >= 80) {
+                return {
+                    type: "🚀 超集中キープ型",
+                    desc: "YouTube의 誘惑を完全にコントロールできています。素晴らしい自律性です！",
+                    color: "var(--success-color)"
+                };
+            } else if (total <= 2 && rate === 100) {
+                return {
+                    type: "✨ 安定スタート型",
+                    desc: "必要な分だけYouTubeを利用し、完璧に作業に戻れています。計画的！",
+                    color: "#38bdf8"
+                };
+            } else if (rate >= 50 && rate < 80) {
+                return {
+                    type: "🔄 リカバリー挑戦型",
+                    desc: "誘惑に負けることもありますが、持ち直して戻れています。あと一歩！",
+                    color: "#fbbf24"
+                };
+            } else {
+                return {
+                    type: "⚠️ 脱線注意型",
+                    desc: "動画のダラダラ視聴が続いています。視聴時間を短くして練習しましょう！",
+                    color: "var(--accent-color)"
+                };
+            }
+        }
+
+        // タイマー終了画面から「戻れたか」を記録し、継続フィードバック画面へ進む
+        function logFocusResultAndNext(success) {
+            // アラーム停止
+            stopAlarm();
+
+            const reason = document.getElementById('finishedReason').textContent;
+            const duration = parseFloat(document.getElementById('watchDuration').value);
+            
+            const logEntry = {
+                id: Date.now().toString(),
+                timestamp: new Date().toISOString(),
+                reason: reason,
+                duration: duration,
+                success: success
+            };
+
+            let logs = [];
+            try {
+                const storedLogs = localStorage.getItem('youtube_focus_logs');
+                if (storedLogs) {
+                    logs = JSON.parse(storedLogs);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            logs.push(logEntry);
+
+            try {
+                localStorage.setItem('youtube_focus_logs', JSON.stringify(logs));
+            } catch (e) {
+                console.error(e);
+            }
+
+            // 本日の統計を計算してAIコメントを準備
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const todayLogs = logs.filter(log => {
+                if (!log.timestamp) return false;
+                const d = new Date(log.timestamp);
+                const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                return dStr === todayStr;
+            });
+            const total = todayLogs.length;
+            const successCount = todayLogs.filter(log => log.success).length;
+            const rate = total > 0 ? Math.round((successCount / total) * 100) : 0;
+
+            // AIフィードバックを表示
+            const aiComment = generateAIComment(reason, duration, success, rate);
+            document.getElementById('aiFeedbackText').textContent = aiComment;
+            document.getElementById('aiFeedbackBox').style.display = 'block';
+
+            // UI更新
+            updateStatistics();
+            renderLogs();
+
+            // ステップ切り替え (継続利用アンケートの表示)
+            document.getElementById('step1FeedbackBox').style.display = 'none';
+            document.getElementById('step2FeedbackBox').style.display = 'block';
+        }
+
+        // 統計情報の更新
+        function updateStatistics() {
+            let logs = [];
+            try {
+                const storedLogs = localStorage.getItem('youtube_focus_logs');
+                if (storedLogs) {
+                    logs = JSON.parse(storedLogs);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            const todayLogs = logs.filter(log => {
+                if (!log.timestamp) return false;
+                const d = new Date(log.timestamp);
+                const dStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                return dStr === todayStr;
+            });
+
+            const total = todayLogs.length;
+            const success = todayLogs.filter(log => log.success).length;
+            const rate = total > 0 ? Math.round((success / total) * 100) : 0;
+
+            // 統計パネルの更新
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statSuccess').textContent = success;
+            document.getElementById('statRate').textContent = `${rate}%`;
+
+            // タイプ診断の更新
+            const diagnosis = diagnoseFocusType(todayLogs);
+            const focusTypeVal = document.getElementById('focusTypeVal');
+            focusTypeVal.textContent = diagnosis.type;
+            focusTypeVal.style.color = diagnosis.color;
+            document.getElementById('focusTypeDesc').textContent = diagnosis.desc;
+        }
+
+        // 履歴ログの表示更新
+        function renderLogs() {
+            let logs = [];
+            try {
+                const storedLogs = localStorage.getItem('youtube_focus_logs');
+                if (storedLogs) {
+                    logs = JSON.parse(storedLogs);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            const logsListEl = document.getElementById('logsList');
+            logsListEl.innerHTML = '';
+
+            if (logs.length === 0) {
+                logsListEl.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; padding: 1.5rem 0;">履歴ログがありません</p>`;
+                return;
+            }
+
+            const displayLogs = [...logs].reverse().slice(0, 10);
+
+            displayLogs.forEach(log => {
+                const logItem = document.createElement('div');
+                logItem.className = 'log-item';
+
+                let dateStr = '不明';
+                if (log.timestamp) {
+                    const d = new Date(log.timestamp);
+                    dateStr = `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                }
+
+                const resultBadgeText = log.success ? '戻れた' : '戻れず';
+                const badgeStyle = log.success
+                    ? 'background-color: rgba(16, 185, 129, 0.15); color: var(--success-color); border: 1px solid rgba(16, 185, 129, 0.3);'
+                    : 'background-color: rgba(239, 68, 68, 0.15); color: var(--accent-color); border: 1px solid rgba(239, 68, 68, 0.3);';
+
+                logItem.innerHTML = `
+                    <div class="log-info">
+                        <div class="log-meta">
+                            <span class="log-date">${dateStr}</span>
+                            <span class="log-duration">${log.duration}分</span>
+                        </div>
+                        <div class="log-reason" title="${escapeHtml(log.reason)}">理由: ${escapeHtml(log.reason)}</div>
+                        <div class="log-ai-advice">
+                            <span>🤖</span>
+                            <span style="font-style: italic;">${getShortAIAdvice(log.reason, log.success)}</span>
+                        </div>
+                    </div>
+                    <div class="log-action">
+                        <span style="font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; ${badgeStyle}">${resultBadgeText}</span>
+                        <button class="delete-single-btn" onclick="deleteSingleLog('${log.id}')" title="このログを削除">×</button>
+                    </div>
+                `;
+                logsListEl.appendChild(logItem);
+            });
+        }
+
+        // 個別ログ削除
+        function deleteSingleLog(id) {
+            if (!confirm('このログを削除してもよろしいですか？')) return;
+
+            let logs = [];
+            try {
+                const storedLogs = localStorage.getItem('youtube_focus_logs');
+                if (storedLogs) {
+                    logs = JSON.parse(storedLogs);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            const filteredLogs = logs.filter(log => log.id !== id);
+
+            try {
+                localStorage.setItem('youtube_focus_logs', JSON.stringify(filteredLogs));
+            } catch (e) {
+                console.error(e);
+            }
+
+            updateStatistics();
+            renderLogs();
+        }
+
+        // すべてのログをクリア
+        function clearAllLogs() {
+            if (!confirm('すべてのログを削除してもよろしいですか？\nこの操作は取り消せません。')) return;
+
+            try {
+                localStorage.removeItem('youtube_focus_logs');
+            } catch (e) {
+                console.error(e);
+            }
+
+            // AIフィードバック表示も閉じる
+            closeAiFeedback();
+
+            updateStatistics();
+            renderLogs();
+        }
+
+
+        /* ==========================================================
+           v4 フィードバック機能＆価値検証ロジック
+           ========================================================== */
+
+        // フィードバックの送信処理
+        function submitFeedback(e, source) {
+            e.preventDefault();
+            
+            let rating = "";
+            let comment = "";
+
+            if (source === 'main') {
+                const ratingEl = document.querySelector('input[name="rating"]:checked');
+                rating = ratingEl ? ratingEl.value : "";
+                comment = document.getElementById('feedbackComment').value.trim();
+            } else if (source === 'timer') {
+                const ratingEl = document.querySelector('input[name="ratingTimer"]:checked');
+                rating = ratingEl ? ratingEl.value : "";
+                comment = document.getElementById('timerFeedbackComment').value.trim();
+            }
+
+            if (!rating) return;
+
+            const feedbackEntry = {
+                id: "fb_" + Date.now().toString(),
+                timestamp: new Date().toISOString(),
+                rating: rating,
+                comment: comment
+            };
+
+            let feedbacks = getStoredFeedbacks();
+            feedbacks.push(feedbackEntry);
+            saveFeedbacks(feedbacks);
+
+            // 送信完了のアラート
+            alert("フィードバックを送信しました。検証へのご協力ありがとうございます！");
+
+            // UIリセット
+            if (source === 'main') {
+                document.getElementById('feedbackForm').reset();
+            }
+            
+            // 各統計・一覧の更新
+            updateFeedbackStatistics();
+            renderFeedbacks();
+
+            if (source === 'timer') {
+                resetTimer(); // タイマー画面から送信した場合はメインに戻る
+            }
+        }
+
+        // フィードバック取得（データが空ならデモ用初期データをセット）
+        function getStoredFeedbacks() {
+            try {
+                const stored = localStorage.getItem('youtube_focus_feedbacks');
+                if (stored) {
+                    return JSON.parse(stored);
+                } else {
+                    // 初期表示用
+                    localStorage.setItem('youtube_focus_feedbacks', JSON.stringify(defaultFeedbacks));
+                    return defaultFeedbacks;
+                }
+            } catch (e) {
+                console.error(e);
+                return defaultFeedbacks;
+            }
+        }
+
+        function saveFeedbacks(feedbacks) {
+            try {
+                localStorage.setItem('youtube_focus_feedbacks', JSON.stringify(feedbacks));
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // フィードバック統計の更新
+        function updateFeedbackStatistics() {
+            const feedbacks = getStoredFeedbacks();
+            const total = feedbacks.length;
+            const wantCount = feedbacks.filter(f => f.rating === 'want').length;
+            const somewhatCount = feedbacks.filter(f => f.rating === 'somewhat').length;
+            
+            // 継続意向率 = (使いたい ＋ 少し使いたい) / 全体
+            const positiveCount = wantCount + somewhatCount;
+            const rate = total > 0 ? Math.round((positiveCount / total) * 100) : 0;
+
+            // UIへの表示
+            document.getElementById('fbTotalStat').textContent = total;
+            document.getElementById('fbWantStat').textContent = wantCount;
+            document.getElementById('fbRateStat').textContent = `${rate}%`;
+        }
+
+        // 判定バッジのテキスト変換
+        function getRatingLabel(rating) {
+            switch(rating) {
+                case 'want': return '😍 使いたい';
+                case 'somewhat': return '🙂 少し使いたい';
+                case 'not_really': return '😟 使わないかも';
+                default: return '不明';
+            }
+        }
+
+        // フィードバック一覧の表示
+        function renderFeedbacks() {
+            const feedbacks = getStoredFeedbacks();
+            const feedbackListEl = document.getElementById('feedbackList');
+            feedbackListEl.innerHTML = '';
+
+            if (feedbacks.length === 0) {
+                feedbackListEl.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; padding: 1.5rem 0;">フィードバックはありません</p>`;
+                return;
+            }
+
+            const displayFeedbacks = [...feedbacks].reverse().slice(0, 5);
+
+            displayFeedbacks.forEach(fb => {
+                const item = document.createElement('div');
+                item.className = 'comment-bubble';
+
+                let dateStr = '不明';
+                if (fb.timestamp) {
+                    const d = new Date(fb.timestamp);
+                    dateStr = `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                }
+
+                item.innerHTML = `
+                    <div class="comment-bubble-meta">
+                        <span>${dateStr}</span>
+                        <span class="rating-badge rating-${fb.rating}">${getRatingLabel(fb.rating)}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; word-break: break-all;">
+                        ${fb.comment ? escapeHtml(fb.comment) : '<span style="color: var(--text-secondary); font-style: italic;">コメントなし</span>'}
+                    </div>
+                    <div style="text-align: right; margin-top: 4px;">
+                        <button onclick="deleteSingleFeedback('${fb.id}')" style="background: transparent; border: none; color: var(--text-secondary); font-size: 0.7rem; cursor: pointer; text-decoration: underline;">削除</button>
+                    </div>
+                `;
+                feedbackListEl.appendChild(item);
+            });
+        }
+
+        // 個別フィードバック削除
+        function deleteSingleFeedback(id) {
+            if (!confirm('このフィードバックを削除してもよろしいですか？')) return;
+
+            let feedbacks = getStoredFeedbacks();
+            const filtered = feedbacks.filter(fb => fb.id !== id);
+            saveFeedbacks(filtered);
+
+            updateFeedbackStatistics();
+            renderFeedbacks();
+            renderValidationView();
+        }
+
+        // 全フィードバック削除
+        function clearAllFeedbacks() {
+            if (!confirm('すべてのフィードバックデータをリセットしますか？\n（デモ用初期データも削除されます）')) return;
+
+            saveFeedbacks([]);
+            updateFeedbackStatistics();
+            renderFeedbacks();
+            renderValidationView();
+        }
+
+        // 価値検証ビュー内の感想リスト更新
+        function renderValidationView() {
+            const feedbacks = getStoredFeedbacks();
+            const valCommentsEl = document.getElementById('valFeedbackComments');
+            valCommentsEl.innerHTML = '';
+
+            // コメントがあるもののみを抽出
+            const commentedFeedbacks = feedbacks.filter(f => f.comment && f.comment.trim() !== '');
+
+            if (commentedFeedbacks.length === 0) {
+                valCommentsEl.innerHTML = `<p style="font-size: 0.85rem; color: var(--text-secondary); text-align: center; padding: 1.5rem 0;">まだ具体的な感想はありません。</p>`;
+                return;
+            }
+
+            commentedFeedbacks.reverse().forEach(fb => {
+                const bubble = document.createElement('div');
+                bubble.className = 'comment-bubble';
+                bubble.style.background = 'rgba(255, 255, 255, 0.01)';
+                
+                let dateStr = '不明';
+                if (fb.timestamp) {
+                    const d = new Date(fb.timestamp);
+                    dateStr = `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+                }
+
+                bubble.innerHTML = `
+                    <div class="comment-bubble-meta">
+                        <span>投稿日: ${dateStr}</span>
+                        <span class="rating-badge rating-${fb.rating}">${getRatingLabel(fb.rating)}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; line-height: 1.4; color: var(--text-primary);">
+                        「 ${escapeHtml(fb.comment)} 」
+                    </div>
+                `;
+                valCommentsEl.appendChild(bubble);
+            });
+        }
+
+
+        // HTMLエスケープ
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ページロード時の初期設定
+        window.addEventListener('DOMContentLoaded', () => {
+            updateStatistics();
+            renderLogs();
+            updateFeedbackStatistics();
+            renderFeedbacks();
+        });
+    </script>
+</body>
+</html>
